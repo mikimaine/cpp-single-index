@@ -64,6 +64,14 @@ void checkOrCreateIndexFile(const std::string& indexFilename) {
     ifile.close();
 }
 
+/**
+ * Create an index file for the data file.
+ * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
+ * The keys are extracted from the beginning of each record in the data file.
+ * 
+ * Sorting is implemented on the temporary index file to create the final index.
+ * 
+*/
 void createIndex(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
     std::ifstream dataFile(dataFilename, std::ifstream::binary);
     if (!dataFile) {
@@ -134,8 +142,9 @@ void createIndex(const std::string& dataFilename, const std::string& indexFilena
  * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
  * The keys are extracted from the beginning of each record in the data file.
  * 
+ * Sorting approach: In-memory sort using a vector of IndexEntry objects.
 */
-void createIndex_InMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
+void createIndexInMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
     std::ifstream dataFile(dataFilename, std::ifstream::binary);
     if (!dataFile) {
         std::cerr << "Error opening data file for reading." << std::endl;
