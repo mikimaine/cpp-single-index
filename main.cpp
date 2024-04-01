@@ -13,11 +13,10 @@ struct IndexEntry {
 std::vector<IndexEntry> indexEntries;
 
 // Function prototypes
-void createIndex(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength);
 void listRecords(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength);
 void searchForKey(const std::string& dataFilename, const std::string& indexFilename, const std::string& key, size_t keyLength);
 void checkOrCreateIndexFile(const std::string& indexFilename);
-void createIndex_InMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength);
+void createIndexInMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength);
 
 int main(int argc, char* argv[]) {
     if (argc < 5) {
@@ -35,7 +34,7 @@ int main(int argc, char* argv[]) {
 
 
     if (mode == "-c") {
-        createIndex(dataFilename, indexFilename, keyLength);
+        createIndexInMemorySort(dataFilename, indexFilename, keyLength);
     } else if (mode == "-l") {
         listRecords(dataFilename, indexFilename, keyLength);
     } else if (mode == "-s") {
@@ -69,79 +68,6 @@ void checkOrCreateIndexFile(const std::string& indexFilename) {
  * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
  * The keys are extracted from the beginning of each record in the data file.
  * 
- * Sorting is implemented on the temporary index file to create the final index.
- * 
-*/
-void createIndex(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
-    std::ifstream dataFile(dataFilename, std::ifstream::binary);
-    if (!dataFile) {
-        std::cerr << "Error opening data file for reading." << std::endl;
-        return;
-    }
-
-    // Temporary index file to store unsorted index entries
-    std::string tempIndexFilename = indexFilename + ".tmp";
-
-    checkOrCreateIndexFile(tempIndexFilename);
-    std::ofstream tempIndexFile(tempIndexFilename, std::ofstream::binary);
-    if (!tempIndexFile) {
-        std::cerr << "Error opening temporary index file for writing." << std::endl;
-        return;
-    }
-
-    std::string line;
-    std::streamoff offset = 0;
-    while (getline(dataFile, line)) {
-        if (line.length() >= keyLength) {
-            std::string key = line.substr(0, keyLength);
-            tempIndexFile.write(key.c_str(), keyLength);
-            tempIndexFile.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
-        }
-        // offset += line.length() + 1; // +1 for the newline character
-        offset = dataFile.tellg();
-    }
-
-    // Close both files
-    dataFile.close();
-    tempIndexFile.close();
-
-    // Now sort the temporary index file to create the final index file
-    // Load the temporary index file into memory for sorting
-    std::ifstream tempIndexFileIn(tempIndexFilename, std::ifstream::binary);
-    std::vector<IndexEntry> indexEntries;
-
-    while (tempIndexFileIn.good()) {
-        IndexEntry entry;
-        entry.key.resize(keyLength);
-        tempIndexFileIn.read(&entry.key[0], keyLength);
-        tempIndexFileIn.read(reinterpret_cast<char*>(&entry.offset), sizeof(entry.offset));
-        if (tempIndexFileIn.gcount() == 0) {
-            break;  // End of file or error
-        }
-        indexEntries.push_back(entry);
-    }
-    tempIndexFileIn.close();
-
-    // Sort the index entries
-    std::sort(indexEntries.begin(), indexEntries.end(), compareIndexEntries);
-
-    // Write the sorted entries to the final index file
-    std::ofstream indexFile(indexFilename, std::ofstream::binary);
-    for (const auto& entry : indexEntries) {
-        indexFile.write(entry.key.c_str(), keyLength);
-        indexFile.write(reinterpret_cast<const char*>(&entry.offset), sizeof(entry.offset));
-    }
-    indexFile.close();
-
-    // Optionally, delete the temporary index file
-    std::remove(tempIndexFilename.c_str());
-}
-
-/**
- * Create an index file for the data file.
- * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
- * The keys are extracted from the beginning of each record in the data file.
- * 
  * Sorting approach: In-memory sort using a vector of IndexEntry objects.
 */
 void createIndexInMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
@@ -154,7 +80,8 @@ void createIndexInMemorySort(const std::string& dataFilename, const std::string&
     std::vector<IndexEntry> indexEntries;
     std::string line;
     std::streamoff offset = 0;
-
+    
+    // Read each line from the data file
     while (getline(dataFile, line)) {
         if (line.length() >= keyLength) {
             // Extract key of specified length
@@ -211,16 +138,22 @@ void listRecords(const std::string& dataFilename, const std::string& indexFilena
         return;
     }
 
+    // Read each entry from the index file
     while (indexFile.good()) {
+        // Allocate memory for reading the key from the file
         char* buffer = new char[keyLength];
+        // Read the key from the file into the buffer
         indexFile.read(buffer, keyLength);
+
         if (indexFile.gcount() < static_cast<std::streamsize>(keyLength)) {
             delete[] buffer;
             break;  // End of file or error
         }
 
         std::streamoff offset;
+        // Read the offset from the file
         indexFile.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+        
         if (!indexFile.good()) {
             delete[] buffer;
             break;  // End of file or error
