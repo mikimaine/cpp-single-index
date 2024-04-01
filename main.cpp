@@ -163,7 +163,8 @@ void createIndexInMemorySort(const std::string& dataFilename, const std::string&
             indexEntries.push_back(IndexEntry{key, offset});
         }
         // Update offset with the length of the line plus newline character
-        offset += line.length() + 1;
+        // offset += line.length() + 1;
+        offset = dataFile.tellg();
     }
 
     // Close data file
