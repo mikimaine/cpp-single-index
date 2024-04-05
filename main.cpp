@@ -1,3 +1,17 @@
+/**
+ * C++ program to create an index file for a data file and search for records using the index file.
+ * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
+ * The keys are extracted from the beginning of each record in the data file.
+ * 
+ * The program supports the following modes:
+ * -c: Create an index file for the data file.
+ * -l: List records from the data file using the index file.
+ * -s: Search for a record by key in the index file.
+ * 
+ * @author Mikiyas A Midru
+ * @date March 25th, 2024 12:00 PM
+*/
+
 #include <fstream>
 #include <vector>
 #include <iostream>
@@ -18,6 +32,14 @@ void searchForKey(const std::string& dataFilename, const std::string& indexFilen
 void checkOrCreateIndexFile(const std::string& indexFilename);
 void createIndexInMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength);
 
+/**
+ * The main function of the program.
+ * 
+ * @param argc The number of command-line arguments.
+ * @param argv An array of C-style strings containing the command-line arguments.
+ *             The first argument is the program name, followed by the mode, data file name, index file name, key length, and optional key.
+ * @return int The exit status of the program.
+ */
 int main(int argc, char* argv[]) {
     if (argc < 5) {
         std::cerr << "Usage: " << argv[0] << " -c|-l|-s datafile indexfile keylength [key]" << std::endl;
@@ -52,14 +74,25 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+/**
+ * Compare two IndexEntry objects based on their keys.
+ * 
+ * @param a The first IndexEntry object.
+ * @param b The second IndexEntry object.
+ * @return bool True if the key of the first object is less than the key of the second object, false otherwise.
+ */
 bool compareIndexEntries(const IndexEntry& a, const IndexEntry& b) {
     return a.key < b.key;
 }
 
-// Attempt to open the index file
+/**
+ * Check if the index file exists and create it if it does not.
+ * 
+ * @param indexFilename The name of the index file.
+ */
 void checkOrCreateIndexFile(const std::string& indexFilename) {
     std::ifstream ifile(indexFilename.c_str(), std::ios::binary);
-    bool indexExists = ifile.good();
+    ifile.good();
     ifile.close();
 }
 
@@ -69,7 +102,11 @@ void checkOrCreateIndexFile(const std::string& indexFilename) {
  * The keys are extracted from the beginning of each record in the data file.
  * 
  * Sorting approach: In-memory sort using a vector of IndexEntry objects.
-*/
+ * 
+ * @param dataFilename The name of the data file.
+ * @param indexFilename The name of the index file to be created.
+ * @param keyLength The length of the keys in the index file.
+ */
 void createIndexInMemorySort(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
     std::ifstream dataFile(dataFilename, std::ifstream::binary);
     if (!dataFile) {
@@ -122,7 +159,10 @@ void createIndexInMemorySort(const std::string& dataFilename, const std::string&
  * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
  * The keys are extracted from the beginning of each record in the data file.
  * 
-*/
+ * @param dataFilename The name of the data file.
+ * @param indexFilename The name of the index file.
+ * @param keyLength The length of the keys in the index file.
+ */
 void listRecords(const std::string& dataFilename, const std::string& indexFilename, size_t keyLength) {
     // Open index file for reading in binary mode
     std::ifstream indexFile(indexFilename, std::ifstream::binary);
@@ -153,7 +193,7 @@ void listRecords(const std::string& dataFilename, const std::string& indexFilena
         std::streamoff offset;
         // Read the offset from the file
         indexFile.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-        
+
         if (!indexFile.good()) {
             delete[] buffer;
             break;  // End of file or error
@@ -179,7 +219,10 @@ void listRecords(const std::string& dataFilename, const std::string& indexFilena
  * Search for a record by key in the index file.
  * The index file contains entries with fixed-length keys and 8-byte offsets to the corresponding records in the data file.
  * The keys are extracted from the beginning of each record in the data file.
- * 
+ * @param dataFilename The name of the data file.
+ * @param indexFilename The name of the index file.
+ * @param key The key to search for.
+ * @param keyLength The length of the keys in the index file.
 */
 void searchForKey(const std::string& dataFilename, const std::string& indexFilename, const std::string& key, size_t keyLength) {
     // Open index file for reading in binary mode
