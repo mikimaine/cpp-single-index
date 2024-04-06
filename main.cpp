@@ -11,19 +11,20 @@
  * @author Mikiyas A Midru
  * @date March 25th, 2024 12:00 PM
 */
-
 #include <fstream>
 #include <vector>
 #include <iostream>
 #include <cstring>
 
-// using namespace std;
-
+/**
+ * Structure to represent an entry in the index file.
+*/
 struct IndexEntry {
     std::string key;
     std::streamoff offset;
 };
 
+// Global variable to store index entries
 std::vector<IndexEntry> indexEntries;
 
 // Function prototypes
@@ -304,7 +305,6 @@ void searchForKey(const std::string& dataFilename, const std::string& indexFilen
         } else {
             // If currentKey equals the search key, the record is found
             found = true;
-            // Read the associated record offset following the key
             /**
              * Read the associated record offset following the key
              * The sizeof() operator is used to determine the size of the variable recordOffset. 
